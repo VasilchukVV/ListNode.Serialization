@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ListNode.Serialization.Tests": {
+      "commandName": "Project",
+      "commandLineArgs": "deepcopy"
+    }
+  }
+}
