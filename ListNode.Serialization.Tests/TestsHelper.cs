@@ -31,7 +31,7 @@ namespace ListNode.Serialization.Tests
 
         private static SerializeDelegate NullSerialize(StreamWriter writer)
         {
-            return (int id, in string data) => Task.CompletedTask;
+            return (int? id, in string data) => Task.CompletedTask;
         }
 
         private static DeserializeDelegate NullDeserialize(StreamReader reader)
@@ -51,6 +51,9 @@ namespace ListNode.Serialization.Tests
 
             var sourceIds = source.GenerateIds();
             var cloneIds = clone.GenerateIds();
+
+            if (sourceIds.Count != cloneIds.Count)
+                Assert.IsTrue(sourceIds.Count == cloneIds.Count);
 
             Assert.IsTrue(sourceIds.Count == cloneIds.Count);
 
@@ -204,8 +207,8 @@ namespace ListNode.Serialization.Tests
 
         public struct NodeInfo
         {
-            [DefaultValue(-1)]
-            public int RandomId;
+            [DefaultValue(null)]
+            public int? RandomId;
 
             [DefaultValue(null)]
             public string Data;

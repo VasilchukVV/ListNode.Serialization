@@ -33,5 +33,69 @@ namespace ListNode
             return source == null ? null : string.Copy(source);
             //return source?.Substring(source.Length);
         }
+
+        public static int? FindRandomNodeOffset(this ListNode node)
+        {
+            if (node?.Random == null)
+                return null;
+
+            if (ReferenceEquals(node, node.Random))
+                return 0;
+
+            var random = node.Random;
+
+            var previous = node.Previous;
+            var next = node.Next;
+
+            var offsetPrevious = -1;
+            var offsetNext = 1;
+
+            int? OffsetPrevious()
+            {
+                while (previous != null)
+                {
+                    if (ReferenceEquals(previous, random))
+                        return offsetPrevious;
+
+                    offsetPrevious--;
+                    previous = previous.Previous;
+                }
+                return null;
+            }
+
+            int? OffsetNext()
+            {
+                while (next != null)
+                {
+                    if (ReferenceEquals(next, random))
+                        return offsetNext;
+
+                    offsetNext++;
+                    next = next.Next;
+                }
+                return null;
+            }
+
+            while (previous != null && next != null)
+            {
+                if (ReferenceEquals(previous, random))
+                    return offsetPrevious;
+
+                offsetPrevious--;
+                previous = previous.Previous;
+
+                if (ReferenceEquals(next, random))
+                    return offsetNext;
+
+                offsetNext++;
+                next = next.Next;
+            }
+
+            var offset = previous != null
+                ? OffsetPrevious() 
+                : OffsetNext();
+
+            return offset;
+        }
     }
 }

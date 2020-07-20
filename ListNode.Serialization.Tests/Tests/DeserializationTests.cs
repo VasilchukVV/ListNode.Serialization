@@ -58,13 +58,12 @@ namespace ListNode.Serialization.Tests
 
         private static TestsHelper.NodeInfo[] CreateDeserializationInfo(ListNode node)
         {
-            var ids = node.GenerateIds();
             var list = new List<TestsHelper.NodeInfo>();
             while (node != null)
             {
                 var nodeInfo = new TestsHelper.NodeInfo
                 {
-                    RandomId = ids.GetId(node.Random),
+                    RandomId = node.FindRandomNodeOffset(),
                     Data = node.Data.DeepCopy()
                 };
                 list.Add(nodeInfo);

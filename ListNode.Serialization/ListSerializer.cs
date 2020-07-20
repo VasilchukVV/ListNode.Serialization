@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 
 namespace ListNode.Serialization
@@ -21,90 +19,137 @@ namespace ListNode.Serialization
         {
             await using var writer = new StreamWriter(stream, leaveOpen: true);
             var serializer = _serializerFactory(writer);
-            var node2Id = head.GenerateIds();
-            foreach (var node in node2Id.Keys)
+
+            var node = head;
+            while (node != null)
             {
-                var randomId = node2Id.GetId(node.Random);
-                await serializer(randomId, node.Data);
+                int? offset = null;
+                if (node.Random != null)
+                    offset = node.FindRandomNodeOffset();
+
+                await serializer(offset, node.Data);
+                node = node.Next;
             }
         }
 
         async Task<ListNode> IListSerializer.Deserialize(Stream stream)
         {
-            var list = new List<ListNode>();    //TODO: use pools instead of creating
-            ListNode listNode = null;
-            var index = 0;
+            ListNode head = null;
+            ListNode current = null;
+            ListNode last = null;
 
-            void Deserialize(int randomId = -1, in string data = null)
+            void Deserialize(int? randomId = null, in string data = null)
             {
-                if (index >= list.Count)
+                if (current == null || ReferenceEquals(current, last))
                 {
-                    var node = new ListNode { Previous = listNode, Data = data };
-                    list.Add(node);
-
-                    if (listNode != null)
-                        listNode.Next = node;
-                    listNode = node;
+                    current = new ListNode { Previous = last, Data = data };
+                    if (last != null)
+                        last.Next = current;
+                    last = current;
+                    head ??= current;
                 }
                 else
-                    list[index].Data = data;
-
-                if (randomId != -1)
                 {
-                    while (randomId >= list.Count)
-                    {
-                        var node = new ListNode { Previous = listNode };
-                        list.Add(node);
-
-                        if (listNode != null)
-                            listNode.Next = node;
-                        listNode = node;
-                    }
-
-                    list[index].Random = list[randomId];
+                    current = current.Next;
+                    current.Data = data;
                 }
 
-                index++;
+                switch (randomId)
+                {
+                    case null:
+                        return;
+                    case 0:
+                        current.Random = current;
+                        break;
+                    default:
+                    {
+                        if (randomId > 0)
+                        {
+                            var node = current.Next;
+                            do
+                            {
+                                if (node != null)
+                                    node = node.Next;
+                                else
+                                {
+                                    node = new ListNode {Previous = last};
+                                    if (last != null)
+                                        last.Next = node;
+                                    last = node;
+                                    node = null;
+                                }
+                                randomId--;
+                            } while (randomId != 0);
+                            current.Random = last;
+                        }
+                        else
+                        {
+                            var node = current;
+                            do
+                            {
+                                node = node.Previous;
+                                randomId++;
+                            } while (randomId != 0);
+                            current.Random = node;
+                        }
+                        break;
+                    }
+                }
             }
 
             using var reader = new StreamReader(stream, leaveOpen: true);
             var deserializer = _deserializerFactory(reader);
             await deserializer(Deserialize);
 
-            return list.Count > 0 ? list[0] : null;
+            return head;
         }
 
         Task<ListNode> IListSerializer.DeepCopy(ListNode head)
         {
-            var hashtable = new Hashtable();    //TODO: use pools instead of creating
-
-            var oldNode = head;
-            ListNode newNode = null;
-            while (oldNode != null)
+            var node = head;
+            ListNode tail = null;
+            ListNode copy = null;
+            while (node != null)
             {
-                newNode = new ListNode
+                tail = node;
+                var listNode = new ListNode { Previous = copy, Data = node.Data.DeepCopy() };
+                if (copy != null)
+                    copy.Next = listNode;
+                copy = listNode;
+                node = node.Next;
+            }
+
+            ListNode result = null;
+            while (tail != null)
+            {
+                result = copy;
+                var randomId = tail.FindRandomNodeOffset();
+                if (randomId != null)
                 {
-                    Previous = newNode,
-                    Data = oldNode.Data.DeepCopy(),
-                    Random = oldNode.Random
-                };
-                hashtable.Add(oldNode, newNode);
-                oldNode = oldNode.Next;
+                    var random = copy;
+                    if (randomId > 0)
+                    {
+                        do
+                        {
+                            random = random.Next;
+                            randomId--;
+                        } while (randomId != 0);
+                    }
+                    else if (randomId < 0)
+                    {
+                        do
+                        {
+                            random = random.Previous;
+                            randomId++;
+                        } while (randomId != 0);
+                    }
+                    copy.Random = random;
+                }
+                tail = tail.Previous;
+                copy = copy.Previous;
             }
 
-            ListNode node = null; 
-            while (newNode != null)
-            {
-                newNode.Next = node;
-                node = newNode;
-
-                if (newNode.Random != null)
-                    newNode.Random = (ListNode)hashtable[newNode.Random];
-
-                newNode = newNode.Previous;
-            }
-
-            return Task.FromResult(node);
+            return Task.FromResult(result);
         }
     }
 }

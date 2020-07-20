@@ -13,15 +13,18 @@ namespace ListNode.Serialization.Tests
             [Values(1, 2, 3)] int count,
             [Range(0, 100, 25)] int nullsPercentage)
         {
-            var nodes = new List<ListNode>();
-            var randoms = new Dictionary<ListNode, int>();
+            var randoms = new Dictionary<ListNode, int?>();
 
-            ListNode node = null;
-            Task Serialize(int randomId = -1, in string data = null)
+            ListNode cloneNode = null;
+            ListNode previous = null;
+            Task Serialize(int? randomId = null, in string data = null)
             {
-                node = new ListNode { Previous = node, Data = data.DeepCopy() };
-                nodes.Add(node);
-                randoms.Add(node!, randomId);
+                var current = new ListNode { Previous = previous, Data = data.DeepCopy() };
+                if (previous != null)
+                    previous.Next = current;
+                previous = current;
+                randoms.Add(current, randomId);
+                cloneNode ??= current;
                 return Task.CompletedTask;
             }
 
@@ -31,7 +34,7 @@ namespace ListNode.Serialization.Tests
             var serializer = TestsHelper.CreateSerializer(writer => Serialize);
             await serializer.Serialize(sourceNode, stream);
 
-            var cloneNode = RestoreCloneNode(node, randoms, nodes);
+            RestoreRandoms(randoms);
             TestsHelper.CheckEqual(sourceNode, cloneNode);
         }
 
@@ -53,21 +56,39 @@ namespace ListNode.Serialization.Tests
                 parallels, repeats, timeoutSeconds);
         }
 
-        private static ListNode RestoreCloneNode(ListNode node, IReadOnlyDictionary<ListNode, int> randoms, IReadOnlyList<ListNode> nodes)
+        private static void RestoreRandoms(IReadOnlyDictionary<ListNode, int?> randoms)
         {
-            ListNode cloneNode = null;
-            while (node != null)
+            foreach (var (node, randomId) in randoms)
             {
-                node.Next = cloneNode;
-                cloneNode = node;
+                if (randomId == null)
+                    continue;
 
-                var randomId = randoms[node];
-                if (randomId != -1)
-                    node.Random = nodes[randomId];
+                var offset = randomId.Value;
+                if (offset == 0)
+                {
+                    node.Random = node;
+                    continue;
+                }
 
-                node = node.Previous;
+                var random = node;
+                if (offset > 0)
+                {
+                    do
+                    {
+                        random = random.Next;
+                        offset--;
+                    } while (offset != 0);
+                }
+                else
+                {
+                    do
+                    {
+                        random = random.Previous;
+                        offset++;
+                    } while (offset != 0);
+                }
+                node.Random = random;
             }
-            return cloneNode;
         }
     }
 }

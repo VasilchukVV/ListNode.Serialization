@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 
 namespace ListNode.Serialization
 {
-    public delegate Task SerializeDelegate(int randomId = -1, in string data = null);
+    public delegate Task SerializeDelegate(int? randomId = null, in string data = null);
     public delegate SerializeDelegate SerializeDelegateFactory(StreamWriter writer);
 
-    public delegate void DeserializeAction(int randomId = -1, in string data = null);
+    public delegate void DeserializeAction(int? randomId = null, in string data = null);
     public delegate Task DeserializeDelegate(DeserializeAction deserializeAction);
     public delegate DeserializeDelegate DeserializeDelegateFactory(StreamReader reader);
 

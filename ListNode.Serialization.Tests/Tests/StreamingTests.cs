@@ -54,7 +54,7 @@ namespace ListNode.Serialization.Tests
         {
             var jsonSettings = new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore };
 
-            Task Serialize(int randomId = -1, in string data = null)
+            Task Serialize(int? randomId = null, in string data = null)
             {
                 var node = new TestsHelper.NodeInfo { RandomId = randomId, Data = data };
                 var json = JsonConvert.SerializeObject(node, Formatting.None, jsonSettings);
@@ -78,7 +78,7 @@ namespace ListNode.Serialization.Tests
 
                     var nodeInfo = json != string.Empty
                         ? JsonConvert.DeserializeObject<TestsHelper.NodeInfo>(json, jsonSettings)
-                        : new TestsHelper.NodeInfo { RandomId = -1 };
+                        : new TestsHelper.NodeInfo { RandomId = null };
                     deserializeAction(nodeInfo.RandomId, nodeInfo.Data);
                 }
             }
