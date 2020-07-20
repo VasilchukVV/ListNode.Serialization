@@ -37,25 +37,29 @@ namespace ListNode.Serialization.Tests
                 case "deepcopy":
                 {
                     var testFixture = new DeepCopyTests();
-                    return testFixture.DeepCopyLongRunTest();
+                    return testFixture.DeepCopyTest(5, 0);
+                    //return testFixture.DeepCopyLongRunTest();
                 }
 
                 case "serialization":
                 {
                     var testFixture = new SerializationTests();
-                    return testFixture.SerializationLongRunTest();
+                    return testFixture.SerializationTest(5, 0);
+                    //return testFixture.SerializationLongRunTest();
                 }
 
                 case "deserialization":
                 {
                     var testFixture = new DeserializationTests();
-                    return testFixture.DeserializationLongRunTest();
+                    return testFixture.DeserializationTest(5, 0);
+                    //return testFixture.DeserializationLongRunTest();
                 }
 
                 case "streaming":
                 {
                     var testFixture = new StreamingTests();
-                    return testFixture.StreamingLongRunTest();
+                    return testFixture.StreamingTest(5, 0);
+                    //return testFixture.StreamingLongRunTest();
                 }
 
                 default:
